@@ -1,16 +1,23 @@
 #!/bin/bash
-while true; do
-  echo "Henter data fra PokeAPI..."
-  curl -s --max-time 10 "https://pokeapi.co/api/v2/pokemon?limit=1000" | \
-    jq -r '.results[] | "#\(.url | split("/")[-2]) \(.name)"' > /app/data/pokemon_log.txt
+LOGFILE="/app/data/pokemon_log.txt"
+id=1
+max=1000
 
-  status=$(curl -s -o /dev/null -w "%{http_code}" --max-time 5 http://web/pokemon)
-  if [ "$status" == "200" ]; then
-    echo "$(date): web svarer 200 OK"
-  elif [ "$status" == "000" ]; then
-    echo "$(date): kunne ikke nå web endnu"
+while true; do
+  timestamp=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+  response=$(curl -s --max-time 10 "https://pokeapi.co/api/v2/pokemon/$id")
+
+  if [ $? -ne 0 ] || [ -z "$response" ]; then
+    echo "$timestamp: kunne ikke hente pokemon #$id, prøver igen om 30s"
   else
-    echo "$(date): web svarede status $status"
+    name=$(echo "$response" | jq -r '.name')
+    echo "=== $timestamp ===" >> "$LOGFILE"
+    echo "#$id $name" >> "$LOGFILE"
+    echo "$timestamp: tilføjede #$id $name til loggen"
+    id=$((id + 1))
+    if [ "$id" -gt "$max" ]; then
+      id=1
+    fi
   fi
 
   sleep 30
