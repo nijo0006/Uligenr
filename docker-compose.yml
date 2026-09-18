@@ -1,0 +1,22 @@
+version: '3.8'
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:80"
+    volumes:
+      - pokemon_data:/app/data
+    depends_on:
+      - fetcher
+
+  fetcher:
+    build:
+      context: .
+      dockerfile: Dockerfile.fetcher
+    volumes:
+      - pokemon_data:/app/data
+
+volumes:
+  pokemon_data:
